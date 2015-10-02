@@ -19,9 +19,9 @@ func PopulateEnvLabels(p *project.Project, csvLabels string) error {
 	return nil
 }
 
-func NetHooks(p *project.Project, e project.Event) error {
+func NetHooks(p *project.Project, e project.EventType) error {
 	switch e {
-	case project.PROJECT_UP_START:
+	case project.EventProjectUpStart:
 		if err := nethooks.AutoGenLabels(p); err != nil {
 			return err
 		}
@@ -29,7 +29,7 @@ func NetHooks(p *project.Project, e project.Event) error {
 		if err := nethooks.CreateNetConfig(p); err != nil {
 			return err
 		}
-	case project.PROJECT_DOWN_START:
+	case project.EventProjectDownStart:
 		if err := nethooks.DeleteNetConfig(p); err != nil {
 			return err
 		}

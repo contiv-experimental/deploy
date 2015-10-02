@@ -72,7 +72,7 @@ func main() {
 		}
 	}
 
-	if err := hooks.NetHooks(p, project.PROJECT_UP_START); err != nil {
+	if err := hooks.NetHooks(p, project.EventProjectUpStart); err != nil {
 		log.Fatalf("Unable to generate network labels. Error %v", err)
 	}
 
