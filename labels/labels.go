@@ -1,10 +1,10 @@
 package labels
 
 import (
+	"errors"
 	"strings"
 
 	log "github.com/Sirupsen/logrus"
-	"github.com/contiv/netplugin/core"
 	"github.com/docker/libcompose/project"
 )
 
@@ -13,7 +13,7 @@ func Parse(csvLabels string) (map[string]string, error) {
 
 	csvRecs := strings.Split(csvLabels, ",")
 	if len(csvRecs) == 0 {
-		return nil, core.Errorf("unable to parse labls '%s'", csvLabels)
+		return nil, errors.New("unable to parse labels")
 	}
 
 	for _, csvRec := range csvRecs {
@@ -21,7 +21,7 @@ func Parse(csvLabels string) (map[string]string, error) {
 		csvValues := strings.Split(csvRec, ":")
 		if len(csvValues) != 2 {
 			log.Errorf("unable to parse labels: '%s'", csvRec)
-			return nil, core.Errorf("unable to parse label record: '%s'", csvRec)
+			return nil, errors.New("unable to parse label record")
 		}
 
 		labels[csvValues[0]] = csvValues[1]
