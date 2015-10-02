@@ -1,0 +1,20 @@
+web:
+  build: .
+  ports:
+   - "5000:5000"
+  volumes:
+   - .:/code
+  links:
+   - redis
+  publish_service: "haha.bridge"
+
+# labels:
+#  net.policy: 'frontend, internal'
+#  io.contiv.tenant: 't1'
+#  io.contiv.env: 'prod'
+redis:
+  image: redis
+# labels:
+#  net.policy: 'database'
+#  io.contiv.tenant: 't1'
+#  io.contiv.env: 'prod'
