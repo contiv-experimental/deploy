@@ -50,7 +50,7 @@ func httpPost(url string, jdata interface{}) error {
 	body := bytes.NewBuffer(buf)
 
 	log.Debugf("Posting url %s: %v \n", url, jdata)
-	return nil
+	// return nil
 
 	r, err := http.Post(url, "application/json", body)
 	if err != nil {

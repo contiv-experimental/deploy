@@ -76,5 +76,5 @@ func main() {
 		log.Fatalf("Unable to generate network labels. Error %v", err)
 	}
 
-	// p.Up()
+	p.Up()
 }
