@@ -25,21 +25,6 @@ func getEpgPath(tenantName, groupName string) string {
 	return baseURL + "endpointGroups/" + tenantName + ":" + groupName + "/"
 }
 
-func AutoGenLabels(p *project.Project) error {
-	for svcName, svc := range p.Configs {
-		labels := svc.Labels.MapParts()
-		if labels == nil {
-			labels = make(map[string]string)
-		}
-
-		labels[EPG_LABEL] = svcName
-
-		svc.Labels = project.NewSliceorMap(labels)
-	}
-
-	return nil
-}
-
 func getTenantName(labels map[string]string) string {
 	tenantName := TENANT_DEFAULT
 	if labels != nil {
@@ -70,6 +55,14 @@ func getSvcLinks(p *project.Project) (map[string][]string, error) {
 	}
 
 	return links, nil
+}
+
+func clearSvcLinks(p *project.Project) error {
+	for svcName, svc := range p.Configs {
+		svc.Links = project.NewMaporColonSlice([]string{})
+		log.Debugf("clearing links for svc '%s' %#v ", svcName, svc.Links)
+	}
+	return nil
 }
 
 func addDenyAllRule(tenantName, networkName, epgName, policyName string, ruleID int) error {
@@ -212,6 +205,10 @@ func CreateNetConfig(p *project.Project) error {
 		}
 	}
 
+	if err := clearSvcLinks(p); err != nil {
+		log.Errorf("Unable to clear service links. Error: %s", err)
+	}
+
 	return nil
 }
 
@@ -247,6 +244,31 @@ func DeleteNetConfig(p *project.Project) error {
 			log.Errorf("Unable to delete '%s' epg. Error: %v", epgPath, err)
 		}
 
+	}
+
+	return nil
+}
+
+func AutoGenParams(p *project.Project) error {
+	for svcName, svc := range p.Configs {
+		if svc.PublishService == "" {
+			svc.PublishService = "default:" + svcName
+		}
+	}
+
+	return nil
+}
+
+func AutoGenLabels(p *project.Project) error {
+	for svcName, svc := range p.Configs {
+		labels := svc.Labels.MapParts()
+		if labels == nil {
+			labels = make(map[string]string)
+		}
+
+		labels[EPG_LABEL] = svcName
+
+		svc.Labels = project.NewSliceorMap(labels)
 	}
 
 	return nil

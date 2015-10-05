@@ -25,6 +25,9 @@ func NetHooks(p *project.Project, e project.EventType) error {
 		if err := nethooks.AutoGenLabels(p); err != nil {
 			return err
 		}
+		if err := nethooks.AutoGenParams(p); err != nil {
+			return err
+		}
 
 		if err := nethooks.CreateNetConfig(p); err != nil {
 			return err
