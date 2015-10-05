@@ -10,6 +10,21 @@ const (
 	baseURL = "http://netmaster:9999/api/"
 )
 
+func getRulePath(tenantName, policyName, ruleID string) string {
+	return baseURL + "rules/" + tenantName + ":" + policyName + ":" + ruleID + "/"
+}
+func getPolicyRulesPath(tenantName, policyName string) string {
+	return baseURL + "rules/" + tenantName + ":" + policyName + "/"
+}
+
+func getPolicyPath(tenantName, policyName string) string {
+	return baseURL + "policys/" + tenantName + ":" + policyName + "/"
+}
+
+func getEpgPath(tenantName, groupName string) string {
+	return baseURL + "endpointGroups/" + tenantName + ":" + groupName + "/"
+}
+
 func AutoGenLabels(p *project.Project) error {
 	for svcName, svc := range p.Configs {
 		labels := svc.Labels.MapParts()
@@ -45,24 +60,6 @@ func getNetworkName(labels map[string]string) string {
 	return networkName
 }
 
-func postRule(rule *contivModel.Rule) error {
-	rulePath := baseURL + "rules/" + rule.TenantName + ":" + rule.PolicyName + ":" + rule.RuleID + "/"
-	err := httpPost(rulePath, rule)
-	return err
-}
-
-func postPolicy(policy *contivModel.Policy) error {
-	policyPath := baseURL + "policys/" + policy.TenantName + ":" + policy.PolicyName + "/"
-	err := httpPost(policyPath, policy)
-	return err
-}
-
-func postEpg(epg *contivModel.EndpointGroup) error {
-	epgPath := baseURL + "endpointGroups/" + epg.TenantName + ":" + epg.GroupName + "/"
-	err := httpPost(epgPath, epg)
-	return err
-}
-
 func getSvcLinks(p *project.Project) (map[string][]string, error) {
 	links := make(map[string][]string)
 
@@ -87,7 +84,7 @@ func addDenyAllRule(tenantName, networkName, epgName, policyName string, ruleID 
 		RuleID:        string(ruleID),
 		TenantName:    tenantName,
 	}
-	if err := postRule(rule); err != nil {
+	if err := httpPost(getRulePath(rule.TenantName, rule.PolicyName, rule.RuleID), rule); err != nil {
 		log.Errorf("Unable to create policy rule. Error: %v", err)
 		return err
 	}
@@ -113,7 +110,7 @@ func addPermitRule(tenantName, networkName, epgName, policyName string, ruleID i
 		RuleID:        string(ruleID),
 		TenantName:    tenantName,
 	}
-	if err := postRule(rule); err != nil {
+	if err := httpPost(getRulePath(rule.TenantName, rule.PolicyName, rule.RuleID), rule); err != nil {
 		log.Errorf("Unable to create policy rule. Error: %v", err)
 		return err
 	}
@@ -126,7 +123,7 @@ func addPolicy(tenantName, policyName string) error {
 		PolicyName: policyName,
 		TenantName: tenantName,
 	}
-	if err := postPolicy(policy); err != nil {
+	if err := httpPost(getPolicyPath(policy.TenantName, policy.PolicyName), policy); err != nil {
 		log.Errorf("Unable to create policy rule. Error: %v", err)
 		return err
 	}
@@ -143,7 +140,7 @@ func addEpg(tenantName, networkName, epgName string, policies []string) error {
 		Policies:        policies,
 		TenantName:      tenantName,
 	}
-	if err := postEpg(epg); err != nil {
+	if err := httpPost(getEpgPath(epg.TenantName, epg.GroupName), epg); err != nil {
 		log.Errorf("Unable to create endpoint group. Error: %v", err)
 		return err
 	}
@@ -222,11 +219,35 @@ func CreateNetConfig(p *project.Project) error {
 func DeleteNetConfig(p *project.Project) error {
 	log.Debugf("Delete network for the project '%s' ", p.Name)
 
-	// determine tenant and network
+	for svcName, _ := range p.Configs {
+		svc := p.Configs[svcName]
 
-	// delete policy
+		log.Debugf("Deleting policies for service '%s' ", svcName)
+		tenantName := getTenantName(svc.Labels.MapParts())
+		networkName := getNetworkName(svc.Labels.MapParts())
+		policyName := svcName + "-in"
+		epgName := svcName
 
-	// delete epgs
+		log.Debugf("Deleting network objects to service '%s': Tenant: %s Network %s", svcName, tenantName, networkName)
+
+		for ruleID := 1; ruleID <= 2; ruleID++ {
+			rulePath := getRulePath(tenantName, policyName, string(ruleID))
+			if err := httpDelete(rulePath); err != nil {
+				log.Errorf("Unable to delete '%s' rule. Error: %v", rulePath, err)
+			}
+		}
+
+		policyPath := getPolicyPath(tenantName, policyName)
+		if err := httpDelete(policyPath); err != nil {
+			log.Errorf("Unable to delete '%s' policy. Error: %v", policyPath, err)
+		}
+
+		epgPath := getEpgPath(tenantName, epgName)
+		if err := httpDelete(epgPath); err != nil {
+			log.Errorf("Unable to delete '%s' epg. Error: %v", epgPath, err)
+		}
+
+	}
 
 	return nil
 }

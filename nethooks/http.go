@@ -10,13 +10,13 @@ import (
 	log "github.com/Sirupsen/logrus"
 )
 
-/*
 func httpGet(url string, jdata interface{}) error {
 
 	r, err := http.Get(url)
 	if err != nil {
 		return err
 	}
+	defer r.Body.Close()
 
 	switch {
 	case r.StatusCode == int(404):
@@ -24,7 +24,7 @@ func httpGet(url string, jdata interface{}) error {
 	case r.StatusCode == int(403):
 		return errors.New("Access denied!")
 	case r.StatusCode != int(200):
-		log.Errorf("GET Status '%s' status code %d \n", r.Status, r.StatusCode)
+		log.Debugf("GET Status '%s' status code %d \n", r.Status, r.StatusCode)
 		return errors.New("unkown error")
 	}
 
@@ -39,7 +39,34 @@ func httpGet(url string, jdata interface{}) error {
 
 	return nil
 }
-*/
+
+func httpDelete(url string) error {
+
+	log.Debugf("Delete URL:>", url)
+
+	req, err := http.NewRequest("DELETE", url, nil)
+
+	r, err := http.DefaultClient.Do(req)
+	if err != nil {
+		panic(err)
+	}
+	defer r.Body.Close()
+
+	// body, _ := ioutil.ReadAll(r.Body)
+
+	switch {
+	case r.StatusCode == int(404):
+		// return errors.New("Page not found!")
+		return nil
+	case r.StatusCode == int(403):
+		return errors.New("Access denied!")
+	case r.StatusCode != int(200):
+		log.Debugf("DELETE Status '%s' status code %d \n", r.Status, r.StatusCode)
+		return errors.New("unkown error")
+	}
+
+	return nil
+}
 
 func httpPost(url string, jdata interface{}) error {
 	buf, err := json.Marshal(jdata)
@@ -48,14 +75,11 @@ func httpPost(url string, jdata interface{}) error {
 	}
 
 	body := bytes.NewBuffer(buf)
-
-	log.Debugf("Posting url %s: %v \n", url, jdata)
-	// return nil
-
 	r, err := http.Post(url, "application/json", body)
 	if err != nil {
 		return err
 	}
+	defer r.Body.Close()
 
 	switch {
 	case r.StatusCode == int(404):
@@ -63,7 +87,7 @@ func httpPost(url string, jdata interface{}) error {
 	case r.StatusCode == int(403):
 		return errors.New("Access denied!")
 	case r.StatusCode != int(200):
-		log.Errorf("POST Status '%s' status code %d \n", r.Status, r.StatusCode)
+		log.Debugf("POST Status '%s' status code %d \n", r.Status, r.StatusCode)
 		return errors.New("unkown error")
 	}
 
@@ -71,37 +95,7 @@ func httpPost(url string, jdata interface{}) error {
 	if err != nil {
 		return err
 	}
-
-	log.Infof("POST response: %s ", string(response))
+	log.Debugf(string(response))
 
 	return nil
 }
-
-/*
-  func httpDelete(url string) error {
-
-    r, err := http.Get(url)
-
-    if err != nil {
-      return err
-    }
-
-    switch {
-    case r.StatusCode == int(404):
-      return errors.New("Page not found!")
-    case r.StatusCode == int(403):
-      return errors.New("Access denied!")
-    case r.StatusCode != int(200):
-      fmt.Printf("DELETE Status '%s' status code %d \n", r.Status, r.StatusCode)
-      return errors.New("unkown error")
-    }
-
-    response, err := ioutil.ReadAll(r.Body)
-    if err != nil {
-      return err
-    }
-    fmt.Println(string(response))
-
-    return nil
-  }
-*/
