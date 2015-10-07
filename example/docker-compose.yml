@@ -6,7 +6,7 @@ web:
    - .:/code
   links:
    - redis
-  publish_service: "haha.bridge"
+#  publish_service: "example_web.private"
 
 # labels:
 #  net.policy: 'frontend, internal'

@@ -25,7 +25,7 @@ func httpGet(url string, jdata interface{}) error {
 		return errors.New("Access denied!")
 	case r.StatusCode != int(200):
 		log.Debugf("GET Status '%s' status code %d \n", r.Status, r.StatusCode)
-		return errors.New("unkown error")
+		return errors.New(r.Status)
 	}
 
 	response, err := ioutil.ReadAll(r.Body)
@@ -62,7 +62,7 @@ func httpDelete(url string) error {
 		return errors.New("Access denied!")
 	case r.StatusCode != int(200):
 		log.Debugf("DELETE Status '%s' status code %d \n", r.Status, r.StatusCode)
-		return errors.New("unkown error")
+		return errors.New(r.Status)
 	}
 
 	return nil
@@ -88,7 +88,7 @@ func httpPost(url string, jdata interface{}) error {
 		return errors.New("Access denied!")
 	case r.StatusCode != int(200):
 		log.Debugf("POST Status '%s' status code %d \n", r.Status, r.StatusCode)
-		return errors.New("unkown error")
+		return errors.New(r.Status)
 	}
 
 	response, err := ioutil.ReadAll(r.Body)

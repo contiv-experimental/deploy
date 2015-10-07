@@ -8,5 +8,5 @@ const (
 
 const (
 	TENANT_DEFAULT  = "default"
-	NETWORK_DEFAULT = "default"
+	NETWORK_DEFAULT = "private"
 )
