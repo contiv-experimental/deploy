@@ -1,6 +1,6 @@
 {
-	"ImportPath": "github.com/docker/libcompose",
-	"GoVersion": "go1.4.1",
+	"ImportPath": "github.com/contiv/deploy",
+	"GoVersion": "go1.5.1",
 	"Packages": [
 		"./..."
 	],
@@ -11,9 +11,27 @@
 			"Rev": "26709e2714106fb8ad40b773b711ebce25b78914"
 		},
 		{
-			"ImportPath": "github.com/codegangsta/cli",
-			"Comment": "1.2.0-66-g6086d79",
-			"Rev": "6086d7927ec35315964d9fea46df6c04e6d697c1"
+			"ImportPath": "github.com/contiv/go-etcd/etcd",
+			"Comment": "v0.4.6-6-g4734e7a",
+			"Rev": "4734e7aca379f0d7fcdf04fbb2101696a4b45ce8"
+		},
+		{
+			"ImportPath": "github.com/contiv/objmodel/contivModel",
+			"Rev": "7f5a4bfaaac4b1635a96b536062ecb56f3e39362"
+		},
+		{
+			"ImportPath": "github.com/contiv/objmodel/objdb",
+			"Rev": "7f5a4bfaaac4b1635a96b536062ecb56f3e39362"
+		},
+		{
+			"ImportPath": "github.com/coreos/etcd/etcdserver/etcdhttp/httptypes",
+			"Comment": "v2.1.0-alpha.0-51-gb24dd8e",
+			"Rev": "b24dd8e4e67d7203c5a68cd43de4f6ffcfff5e66"
+		},
+		{
+			"ImportPath": "github.com/coreos/etcd/pkg/types",
+			"Comment": "v2.1.0-alpha.0-51-gb24dd8e",
+			"Rev": "b24dd8e4e67d7203c5a68cd43de4f6ffcfff5e66"
 		},
 		{
 			"ImportPath": "github.com/docker/distribution",
@@ -201,6 +219,26 @@
 			"Rev": "f39987afe8d611407887b3094c03d6ba6a766a67"
 		},
 		{
+			"ImportPath": "github.com/docker/libcompose/docker",
+			"Rev": "e5e0e8ef94659d27826548314a90aaccec12b696"
+		},
+		{
+			"ImportPath": "github.com/docker/libcompose/logger",
+			"Rev": "e5e0e8ef94659d27826548314a90aaccec12b696"
+		},
+		{
+			"ImportPath": "github.com/docker/libcompose/lookup",
+			"Rev": "e5e0e8ef94659d27826548314a90aaccec12b696"
+		},
+		{
+			"ImportPath": "github.com/docker/libcompose/project",
+			"Rev": "e5e0e8ef94659d27826548314a90aaccec12b696"
+		},
+		{
+			"ImportPath": "github.com/docker/libcompose/utils",
+			"Rev": "e5e0e8ef94659d27826548314a90aaccec12b696"
+		},
+		{
 			"ImportPath": "github.com/docker/libtrust",
 			"Rev": "9cbd2a1374f46905c68a4eb3694a130610adc62a"
 		},
@@ -226,21 +264,8 @@
 			"Rev": "68832c185bb6304fed26a986891fd27b6ed17987"
 		},
 		{
-			"ImportPath": "github.com/stretchr/testify/assert",
-			"Comment": "v1.0-12-g7e4a149",
-			"Rev": "7e4a149930b09fe4c2b134c50ce637457ba6e966"
-		},
-		{
-			"ImportPath": "golang.org/x/crypto/ssh/terminal",
-			"Rev": "4d48e5fa3d62b5e6e71260571bf76c767198ca02"
-		},
-		{
 			"ImportPath": "golang.org/x/net/context",
 			"Rev": "3a29182c25eeabbaaf94daaeecbc7823d86261e7"
-		},
-		{
-			"ImportPath": "gopkg.in/check.v1",
-			"Rev": "11d3bc7aa68e238947792f30573146a3231fc0f1"
 		},
 		{
 			"ImportPath": "gopkg.in/yaml.v2",
