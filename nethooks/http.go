@@ -42,8 +42,6 @@ func httpGet(url string, jdata interface{}) error {
 
 func httpDelete(url string) error {
 
-	log.Debugf("Delete URL:>", url)
-
 	req, err := http.NewRequest("DELETE", url, nil)
 
 	r, err := http.DefaultClient.Do(req)

@@ -1,3 +1,4 @@
 FROM redis
 RUN apt-get update
 RUN apt-get install -y tcpdump fping iperf 
+EXPOSE 6379 5001
