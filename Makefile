@@ -4,7 +4,7 @@ deploy:
 	godep go build -v .
 
 test:
-	godep go test -v ./nethooks ./labels
+	godep go test -v ./...
 
 update-docker-godeps:
 	go get -d -u github.com/docker/docker || exit 0
