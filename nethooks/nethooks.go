@@ -74,7 +74,6 @@ func clearSvcLinks(p *project.Project) error {
 }
 
 func addDenyAllRule(tenantName, networkName, fromEpgName, policyName string, ruleID int) error {
-	// create rules and policy
 	rule := &contivModel.Rule{
 		Action:        "deny",
 		Direction:     "in",
@@ -93,7 +92,7 @@ func addDenyAllRule(tenantName, networkName, fromEpgName, policyName string, rul
 	return nil
 }
 
-func addInAcceptRule(tenantName, networkName, fromEpgName, policyName string, portID, ruleID int) error {
+func addInAcceptRule(tenantName, networkName, fromEpgName, policyName, protoName string, portID, ruleID int) error {
 	if err := addDenyAllRule(tenantName, networkName, fromEpgName, policyName, ruleID); err != nil {
 		return err
 	}
@@ -108,7 +107,7 @@ func addInAcceptRule(tenantName, networkName, fromEpgName, policyName string, po
 		PolicyName:    policyName,
 		Port:		   portID,
 		Priority:      2,
-		Protocol:      "tcp",
+		Protocol:      protoName,
 		RuleID:        string(ruleID + '0'),
 		TenantName:    tenantName,
 	}
@@ -154,7 +153,6 @@ func addPolicy(tenantName, policyName string) error {
 }
 
 func addEpg(tenantName, networkName, epgName string, policies []string) error {
-	// create epgs
 	epg := &contivModel.EndpointGroup{
 		EndpointGroupID: 1,
 		GroupName:       epgName,
@@ -170,12 +168,12 @@ func addEpg(tenantName, networkName, epgName string, policies []string) error {
 	return nil
 }
 
-func applyUnspecifiedPolicy(p *project.Project, policyApplied map[string]bool) error {
+func applyDefaultPolicy(p *project.Project, policyApplied map[string]bool) error {
 	for svcName, _ := range p.Configs {
 		svc := p.Configs[svcName]
 		tenantName := getTenantName(svc.Labels.MapParts())
 		networkName := getNetworkName(svc.Labels.MapParts())
-		epgName := getFullSvcName(p, svcName)
+		toEpgName := getFullSvcName(p, svcName)
 		fromEpgName := ""
 
 		if _, ok := policyApplied[svcName]; ok {
@@ -213,7 +211,7 @@ func applyUnspecifiedPolicy(p *project.Project, policyApplied map[string]bool) e
 
 
 		// add epg with in and out policies
-		if err := addEpg(tenantName, networkName, epgName, policies); err != nil {
+		if err := addEpg(tenantName, networkName, toEpgName, policies); err != nil {
 			log.Errorf("Unable to add epg. Error %v", err)
 			return err
 		}
@@ -222,16 +220,52 @@ func applyUnspecifiedPolicy(p *project.Project, policyApplied map[string]bool) e
 	return nil
 }
 
+
+func applyInPolicy(p *project.Project, toSvcName string) error {
+	svc := p.Configs[toSvcName]
+
+	tenantName := getTenantName(svc.Labels.MapParts())
+	networkName := getNetworkName(svc.Labels.MapParts())
+	toEpgName := getFullSvcName(p, toSvcName)
+
+	policyName := toSvcName + "-in"
+	fromEpgName := ""		// no contract rules for now
+	ruleID := 1
+	policies := []string{}
+
+	portID, protoName, err := getImageInfo(toSvcName)
+	if err != nil {
+		log.Infof("Unable to auto fetch port/protocol information. Error %v", err)
+	}
+
+	log.Debugf("Creating network objects to service '%s': Tenant: %s Network %s", toSvcName, tenantName, networkName)
+
+	if err := addPolicy(tenantName, policyName); err != nil {
+		log.Errorf("Unable to add policy. Error %v ", err)
+		return err
+	}
+	policies = append(policies, policyName)
+
+	if err := addInAcceptRule(tenantName, networkName, fromEpgName, policyName, protoName, portID, ruleID); err != nil {
+		log.Errorf("Unable to add accept rule. Error %v ", err)
+		return err
+	}
+
+	if err := addEpg(tenantName, networkName, toEpgName, policies); err != nil {
+		log.Errorf("Unable to add epg. Error %v", err)
+			return err
+	}
+
+	return nil
+}
+
+
 // CreateNetConfig creates the netmaster configuration
 // It also updates the project with information if needed before project up
 func CreateNetConfig(p *project.Project) error {
-	skipUnspecified := false
+	skipDefaultPolicy := false
 
 	log.Debugf("Create network for the project '%s' ", p.Name)
-
-	for _, svc := range p.Configs {
-		log.Debugf("===> VJ service %s, publishService %s ", svc.Name, svc.PublishService)
-	}
 
 	links, err := getSvcLinks(p)
 	if err != nil {
@@ -242,41 +276,18 @@ func CreateNetConfig(p *project.Project) error {
 	policyApplied := make(map[string]bool)
 	for fromSvcName, toSvcNames := range links {
 		log.Debugf("Initiating contracts from service '%s' to services %s", fromSvcName, toSvcNames)
-		for _, svcName := range toSvcNames {
-			svc := p.Configs[svcName]
-
-			tenantName := getTenantName(svc.Labels.MapParts())
-			networkName := getNetworkName(svc.Labels.MapParts())
-			policyName := svcName + "-in"
-			epgName := getFullSvcName(p, svcName)
-			fromEpgName := ""		// no contract rules for now
-			ruleID := 1
-			policies := []string{}
-
-			log.Debugf("Creating network objects to service '%s': Tenant: %s Network %s", svcName, tenantName, networkName)
-
-			if err := addPolicy(tenantName, policyName); err != nil {
-				log.Errorf("Unable to add policy. Error %v ", err)
-				return err
-			}
-			policies = append(policies, policyName)
-
-			if err := addInAcceptRule(tenantName, networkName, fromEpgName, policyName, 6379, ruleID); err != nil {
-				log.Errorf("Unable to add accept rule. Error %v ", err)
+		for _, toSvcName := range toSvcNames {
+			if err := applyInPolicy(p, toSvcName); err != nil {
+				log.Errorf("Unable to apply in policy for service '%s'. Error %v", toSvcName, err)
 				return err
 			}
 
-			if err := addEpg(tenantName, networkName, epgName, policies); err != nil {
-				log.Errorf("Unable to add epg. Error %v", err)
-				return err
-			}
-
-			policyApplied[svcName] = true
+			policyApplied[toSvcName] = true
 		}
 	}
 
-	if skipUnspecified {
-		err = applyUnspecifiedPolicy(p, policyApplied)
+	if skipDefaultPolicy {
+		err = applyDefaultPolicy(p, policyApplied)
 		if err != nil {
 			log.Errorf("Unable to apply policies for unspecified tiers. Error %v", err)
 			return err
