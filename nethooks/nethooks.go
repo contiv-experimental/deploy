@@ -105,7 +105,7 @@ func addInAcceptRule(tenantName, networkName, fromEpgName, policyName, protoName
 		EndpointGroup: fromEpgName,
 		Network:       networkName,
 		PolicyName:    policyName,
-		Port:		   portID,
+		Port:          portID,
 		Priority:      2,
 		Protocol:      protoName,
 		RuleID:        string(ruleID + '0'),
@@ -209,7 +209,6 @@ func applyDefaultPolicy(p *project.Project, policyApplied map[string]bool) error
 			return err
 		}
 
-
 		// add epg with in and out policies
 		if err := addEpg(tenantName, networkName, toEpgName, policies); err != nil {
 			log.Errorf("Unable to add epg. Error %v", err)
@@ -220,7 +219,6 @@ func applyDefaultPolicy(p *project.Project, policyApplied map[string]bool) error
 	return nil
 }
 
-
 func applyInPolicy(p *project.Project, toSvcName string) error {
 	svc := p.Configs[toSvcName]
 
@@ -229,7 +227,7 @@ func applyInPolicy(p *project.Project, toSvcName string) error {
 	toEpgName := getFullSvcName(p, toSvcName)
 
 	policyName := toSvcName + "-in"
-	fromEpgName := ""		// no contract rules for now
+	fromEpgName := "" // no contract rules for now
 	ruleID := 1
 	policies := []string{}
 
@@ -253,12 +251,11 @@ func applyInPolicy(p *project.Project, toSvcName string) error {
 
 	if err := addEpg(tenantName, networkName, toEpgName, policies); err != nil {
 		log.Errorf("Unable to add epg. Error %v", err)
-			return err
+		return err
 	}
 
 	return nil
 }
-
 
 // CreateNetConfig creates the netmaster configuration
 // It also updates the project with information if needed before project up
@@ -339,11 +336,13 @@ func DeleteNetConfig(p *project.Project) error {
 }
 
 func AutoGenParams(p *project.Project) error {
-	for svcName, svc := range p.Configs {
-		if svc.PublishService == "" {
-			svc.PublishService = getFullSvcName(p, svcName)
+	/*
+		for svcName, svc := range p.Configs {
+			if svc.PublishService == "" {
+				svc.PublishService = getFullSvcName(p, svcName)
+			}
 		}
-	}
+	*/
 
 	return nil
 }
