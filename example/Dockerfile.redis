@@ -1,4 +1,4 @@
 FROM redis
-RUN apt-get update
-RUN apt-get install -y tcpdump fping iperf 
+RUN apt-get update &&\
+    apt-get install -y tcpdump fping iperf netcat net-tools
 EXPOSE 6379 5001

@@ -6,15 +6,5 @@ web:
    - .:/code
   links:
    - redis
-#  publish_service: "example_web.private"
-
-# labels:
-#  net.policy: 'frontend, internal'
-#  io.contiv.tenant: 't1'
-#  io.contiv.env: 'prod'
 redis:
   image: redis
-# labels:
-#  net.policy: 'database'
-#  io.contiv.tenant: 't1'
-#  io.contiv.env: 'prod'

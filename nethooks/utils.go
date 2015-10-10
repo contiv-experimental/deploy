@@ -25,7 +25,7 @@ func getImageInfo(imageName string) ([]imageInfo, error) {
 	}
 
 	info, err := docker.InspectImage(imageName)
-	log.Infof("Got the following info for the image %#v", info)
+	log.Debugf("Got the following info for the image %#v", info)
 
 	if err != nil {
 		log.Errorf("Unable to inspect image '%s'. Error %v", imageName, err)

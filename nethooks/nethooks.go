@@ -9,6 +9,7 @@ const (
 	applyLinksBasedPolicyFlag = true
 	applyLabelsBasedPolicyFlag = true
 	applyDefaultPolicyFlag = false
+	applyContractPolicyFlag = true
 )
 
 func applyLinksBasedPolicy(p *project.Project) error {
@@ -18,11 +19,16 @@ func applyLinksBasedPolicy(p *project.Project) error {
 		return err
 	}
 
+	if err := addEpgs(p); err != nil {
+		log.Errorf("Unable to apply policies for unspecified tiers. Error %v", err)
+		return err
+	}
+
 	policyApplied := make(map[string]bool)
 	for fromSvcName, toSvcNames := range links {
-		log.Debugf("Initiating contracts from service '%s' to services %s", fromSvcName, toSvcNames)
 		for _, toSvcName := range toSvcNames {
-			if err := applyInPolicy(p, toSvcName); err != nil {
+		  log.Infof("Creating policy contract from service '%s' to services '%s'", fromSvcName, toSvcName)
+			if err := applyInPolicy(p, fromSvcName, toSvcName); err != nil {
 				log.Errorf("Unable to apply in-policy for service '%s'. Error %v", toSvcName, err)
 				return err
 			}
@@ -36,12 +42,7 @@ func applyLinksBasedPolicy(p *project.Project) error {
 			log.Errorf("Unable to apply policies for unspecified tiers. Error %v", err)
 			return err
 		}
-	} else {
-		if err := addEpgs(p, policyApplied); err != nil {
-			log.Errorf("Unable to apply policies for unspecified tiers. Error %v", err)
-			return err
-		}
-	}
+	} 
 
 	return nil
 }
