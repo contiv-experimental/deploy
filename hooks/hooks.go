@@ -40,3 +40,18 @@ func NetHooks(p *project.Project, e project.EventType) error {
 
 	return nil
 }
+
+func PopulateDNS(p *project.Project, e project.EventType) error {
+	switch e {
+	case project.EventProjectUpStart:
+		if err := nethooks.PopulateEtcHosts(p); err != nil {
+			return err
+		}
+	case project.EventProjectDownStart:
+	}
+
+	if err := nethooks.PopulateEtcHosts(p); err != nil {
+		return err
+	}
+	return nil
+}

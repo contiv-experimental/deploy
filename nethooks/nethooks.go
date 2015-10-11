@@ -97,6 +97,9 @@ func AutoGenParams(p *project.Project) error {
 		if svc.PublishService == "" {
 			svc.PublishService = getFullSvcName(p, svcName)
 		}
+		if svc.Hostname == "" {
+			svc.Hostname = p.Name + "_" + svcName + "_1"
+		}
 	}
 
 	return nil
@@ -114,5 +117,35 @@ func AutoGenLabels(p *project.Project) error {
 		svc.Labels = project.NewSliceorMap(labels)
 	}
 
+	return nil
+}
+
+func getContName(p *project.Project, svcName string) string {
+	return p.Name + "_" + svcName + "_1"
+}
+
+func getSvcNameWithProject(p *project.Project, svcName string) string {
+	return p.Name + "_" + svcName
+}
+
+func PopulateEtcHosts(p *project.Project) error {
+	for dnsSvcName, _ := range p.Configs {
+		dnsContName := getContName(p, dnsSvcName)
+		dnsSvcIpAddress := getContainerIP(dnsContName)
+		dnsSvcEntryName := getSvcNameWithProject(p, dnsSvcName)
+
+		// TODO: need to populate all instances not just first instance
+		for contSvcName, _ := range p.Configs {
+			if contSvcName == dnsSvcName {
+					continue
+			}
+			contName := getContName(p, contSvcName)
+			if err := populateEtcHosts(contName, dnsSvcEntryName, dnsSvcIpAddress); err != nil {
+				log.Errorf("Unable to populate /etc/hosts entry into container '%s' entry '%s %s'. Error %v",
+					contName, dnsSvcEntryName, dnsSvcIpAddress)
+			}
+			log.Debugf("populated dns: container '%s' svc '%s' with ip '%s'", contName, dnsSvcEntryName, dnsSvcIpAddress)
+		}
+	}
 	return nil
 }

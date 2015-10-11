@@ -318,7 +318,7 @@ func removePolicy(p *project.Project, svcName, dir string) error {
 
 	policy := contivModel.Policy{}
 	if err := httpGet(policyPath, &policy); err != nil {
-		log.Infof("Unable to delete policy for service '%s' policy %s", svcName, policyName)
+		log.Debugf("Unable to delete policy for service '%s' policy %s", svcName, policyName)
 		return nil
 	}
 
