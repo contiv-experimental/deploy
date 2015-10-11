@@ -92,8 +92,21 @@ func getSvcLinks(p *project.Project) (map[string][]string, error) {
 
 func clearSvcLinks(p *project.Project) error {
 	for svcName, svc := range p.Configs {
-		svc.Links = project.NewMaporColonSlice([]string{})
-		log.Debugf("clearing links for svc '%s' %#v ", svcName, svc.Links)
+		// if len(svc.Links.Slice()) > 0 {
+			svc.Links = project.NewMaporColonSlice([]string{})
+			log.Debugf("clearing links for svc '%s' %#v ", svcName, svc.Links)
+		// }
+	}
+	return nil
+}
+
+func clearExposedPorts(p *project.Project) error {
+	for svcName, svc := range p.Configs {
+		if len(svc.Expose) > 0 {
+			svc.Expose = []string{}
+			log.Debugf("clearing exposed ports for svc '%s' %#v ", svcName, svc.Links)
+		}
+		svc.Ports = []string{}
 	}
 	return nil
 }

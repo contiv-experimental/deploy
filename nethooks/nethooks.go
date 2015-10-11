@@ -59,6 +59,9 @@ func CreateNetConfig(p *project.Project) error {
 		if err := clearSvcLinks(p); err != nil {
 			log.Errorf("Unable to clear service links. Error: %s", err)
 		}
+		if err := clearExposedPorts(p); err != nil {
+			log.Errorf("Unable to clear exposed ports. Error: %s", err)
+		}
 	}
 	if applyLabelsBasedPolicyFlag {
 		log.Infof("Applying labels based policies")
@@ -141,6 +144,11 @@ func PopulateEtcHosts(p *project.Project) error {
 			}
 			contName := getContName(p, contSvcName)
 			if err := populateEtcHosts(contName, dnsSvcEntryName, dnsSvcIpAddress); err != nil {
+				log.Errorf("Unable to populate /etc/hosts entry into container '%s' entry '%s %s'. Error %v",
+					contName, dnsSvcEntryName, dnsSvcIpAddress)
+			}
+
+			if err := populateEtcHosts(contName, dnsSvcName, dnsSvcIpAddress); err != nil {
 				log.Errorf("Unable to populate /etc/hosts entry into container '%s' entry '%s %s'. Error %v",
 					contName, dnsSvcEntryName, dnsSvcIpAddress)
 			}
