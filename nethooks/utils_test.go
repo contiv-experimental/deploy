@@ -8,9 +8,9 @@ const (
 	imageName = "redis"
 )
 
-func TestPortID(t *testing.T) {
-	portID, protoID, err := getPortID(imageName)
+func TestGetImageInfo(t *testing.T) {
+	imageInfo, err := getImageInfo(imageName)
 	if err != nil {
-		t.Errorf("Unable to get port id for image %s. Error %v \n", imageName, err)
+		t.Errorf("Unable to get port id for image %s. Error %v \n", imageInfo, err)
 	}
 }
