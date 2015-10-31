@@ -13,6 +13,8 @@ const (
 )
 
 func applyLinksBasedPolicy(p *project.Project) error {
+	//TODO allow tenant name to be specified
+	name := "default"
 	links, err := getSvcLinks(p)
 	if err != nil {
 		log.Debugf("Unable to find links from service chains. Error %v", err)
@@ -35,6 +37,11 @@ func applyLinksBasedPolicy(p *project.Project) error {
 
 			policyApplied[toSvcName] = true
 		}
+	}
+
+	if err := addApp(name, p); err != nil {
+		log.Errorf("Unable to create app with unspecified tiers. Error %v", err)
+		return err
 	}
 
 	if applyDefaultPolicyFlag {

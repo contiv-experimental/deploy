@@ -3,6 +3,7 @@ package nethooks
 import (
 	log "github.com/Sirupsen/logrus"
 	"github.com/contiv/objmodel/contivModel"
+	"github.com/contiv/objmodel/objdb/modeldb"
 	"github.com/docker/libcompose/project"
 )
 
@@ -24,6 +25,10 @@ func getPolicyRulesPath(tenantName, policyName string) string {
 
 func getPolicyPath(tenantName, policyName string) string {
 	return baseURL + "policys/" + tenantName + ":" + policyName + "/"
+}
+
+func getAppPath(tenantName, appName string) string {
+	return baseURL + "apps/" + tenantName + ":" + appName + "/"
 }
 
 func getEpgPath(tenantName, groupName string) string {
@@ -179,6 +184,35 @@ func addPolicy(tenantName, policyName string) error {
 	}
 	if err := httpPost(getPolicyPath(policy.TenantName, policy.PolicyName), policy); err != nil {
 		log.Debugf("Unable to create policy rule. Error: %v", err)
+		return err
+	}
+
+	return nil
+}
+
+func addApp (tenantName string, p *project.Project) error {
+
+	log.Debugf("Entered addApp '%s':'%s' ", tenantName, p.Name)
+	app := &contivModel.App{
+		AppName: p.Name,
+		TenantName: tenantName,
+	}
+
+	for svcName := range p.Configs {
+		epgName := getFullSvcName(p, svcName)
+	        epg := &contivModel.EndpointGroup{
+	        	Key:       epgName,
+	        }
+
+		if err := modeldb.AddLinkSet(&app.LinkSets.Services, epg); err != nil {
+			log.Errorf("addApp:Unable to add link for service '%s'. Error %v", svcName, err)
+			return err
+		}
+	        log.Debugf("addApp add link for:'%s' ", epgName)
+	}
+
+	if err := httpPost(getAppPath(tenantName, p.Name), app); err != nil {
+		log.Errorf("Unable to post app to netmaster. Error: %v", err)
 		return err
 	}
 
