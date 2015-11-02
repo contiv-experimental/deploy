@@ -228,6 +228,18 @@ func addApp(tenantName string, p *project.Project) error {
 	return nil
 }
 
+func deleteApp (tenantName string, p *project.Project) error {
+
+	log.Debugf("Entered deleteApp '%s':'%s' ", tenantName, p.Name)
+
+	if err := httpDelete(getAppPath(tenantName, p.Name)); err != nil {
+		log.Errorf("Unable to post app delete to netmaster. Error: %v", err)
+		return err
+	}
+
+	return nil
+}
+
 func addEpg(tenantName, networkName, epgName string, policies []string) error {
 	epg := &contivModel.EndpointGroup{
 		EndpointGroupID: 1,

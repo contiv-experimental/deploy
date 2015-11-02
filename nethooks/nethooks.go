@@ -80,6 +80,8 @@ func CreateNetConfig(p *project.Project) error {
 // DeleteNetConfig removes the netmaster configuraton
 func DeleteNetConfig(p *project.Project) error {
 	log.Debugf("Delete network for the project '%s' ", p.Name)
+	//TODO allow tenant name to be specified
+	name := "default"
 
 	for svcName, _ := range p.Configs {
 		if err := removeEpg(p, svcName); err != nil {
@@ -97,6 +99,10 @@ func DeleteNetConfig(p *project.Project) error {
 		if err := clearSvcLinks(p); err != nil {
 			log.Errorf("Unable to clear service links. Error: %s", err)
 		}
+	}
+
+	if err := deleteApp(name, p); err != nil {
+		log.Errorf("Unable to delete app. Error %v", err)
 	}
 
 	return nil
