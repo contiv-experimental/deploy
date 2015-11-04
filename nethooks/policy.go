@@ -1,6 +1,8 @@
 package nethooks
 
 import (
+	"strconv"
+	s "strings"
 	log "github.com/Sirupsen/logrus"
 	"github.com/contiv/objmodel/contivModel"
 	"github.com/contiv/objmodel/objdb/modeldb"
@@ -10,6 +12,11 @@ import (
 const (
 	baseURL = "http://netmaster:9999/api/"
 )
+
+type policyCreateRec struct {
+	nextRuleId int
+	policyApplied bool
+}
 
 func getRulePath(tenantName, policyName, ruleID string) string {
 	return baseURL + "rules/" + tenantName + ":" + policyName + ":" + ruleID + "/"
@@ -95,6 +102,7 @@ func getSvcLinks(p *project.Project) (map[string][]string, error) {
 	links := make(map[string][]string)
 
 	for svcName, svc := range p.Configs {
+		log.Debugf("svc %s === %+v ", svcName, svc)
 		svcLinks := svc.Links.Slice()
 		log.Debugf("found links for svc '%s' %#v ", svcName, svcLinks)
 		links[svcName] = svcLinks
@@ -113,9 +121,36 @@ func clearSvcLinks(p *project.Project) error {
 	return nil
 }
 
+func extractPort(ps string) string {
+	lastCol := s.LastIndex(ps, ":")
+	if lastCol == -1 {
+		return ps
+	}
+
+	return ps[lastCol+1:]
+}
+
+func getSvcPorts(p *project.Project) (map[string][]string, error) {
+	sPorts := make(map[string][]string)
+	res := []string{}
+	for svcName, svc := range p.Configs {
+		if len(svc.Ports) > 0 {
+			pList := svc.Ports
+			for _, ps := range pList {
+				res = append(res, extractPort(ps))
+			}
+			sPorts[svcName] = res
+			log.Debugf("Service %v port %v", svcName, sPorts[svcName])
+		}
+	}
+
+	return sPorts, nil
+}
+
 func clearExposedPorts(p *project.Project) error {
 	for svcName, svc := range p.Configs {
 		if len(svc.Expose) > 0 {
+			log.Debugf("svc.Expose: %v svc.Ports %v", svc.Expose, svc.Ports)
 			svc.Expose = []string{}
 			log.Debugf("clearing exposed ports for svc '%s' %#v ", svcName, svc.Links)
 		}
@@ -271,14 +306,16 @@ func addEpgs(p *project.Project) error {
 	return nil
 }
 
-func applyDefaultPolicy(p *project.Project, policyApplied map[string]bool) error {
+func applyDefaultPolicy(p *project.Project, polRecs map[string]policyCreateRec) error {
 	for svcName, svc := range p.Configs {
 		tenantName := getTenantName(svc.Labels.MapParts())
 		networkName := getNetworkName(svc.Labels.MapParts())
 		toEpgName := getSvcName(p, svcName)
 
-		if _, ok := policyApplied[svcName]; ok {
-			continue
+		if pR, ok := polRecs[svcName]; ok {
+			if pR.policyApplied {
+				continue
+			}
 		}
 
 		// add 'in' policy for the service tier
@@ -320,9 +357,67 @@ func applyDefaultPolicy(p *project.Project, policyApplied map[string]bool) error
 	return nil
 }
 
-func applyInPolicy(p *project.Project, fromSvcName, toSvcName string) error {
+func getPolicyRec(name string, polRecs map[string]policyCreateRec) policyCreateRec {
+	rec, ok := polRecs[name]
+
+	if ok {
+		return rec
+	}
+
+	rec = policyCreateRec{nextRuleId: 1, policyApplied: false}
+	polRecs[name] = rec
+	return rec
+}
+
+func applyExposePolicy(p *project.Project, expMap map[string][]string, polRecs map[string]policyCreateRec) error {
+	
+	tenantName := "default"
+	for toSvcName, spList := range expMap {
+		svc := p.Configs[toSvcName]
+		networkName := getNetworkName(svc.Labels.MapParts())
+		policyRec := getPolicyRec(toSvcName, polRecs)
+		ruleID := policyRec.nextRuleId
+		policyName := getInPolicyStr(p.Name, toSvcName)
+		// create the policy, if necessary
+		if !policyRec.policyApplied && (len(spList) > 0) {
+		    policies := []string{}
+			if err := addPolicy(tenantName, policyName); err != nil {
+				log.Errorf("Unable to add policy. Error %v ", err)
+				return err
+			}
+			toEpgName := getFullSvcName(p, toSvcName)
+			policies = append(policies, policyName)
+			if err := addEpg(tenantName, networkName, toEpgName, policies); err != nil {
+				log.Errorf("Unable to add epg. Error %v", err)
+				return err
+			}
+		}
+
+		for _, portID := range spList {
+			pNum, err := strconv.Atoi(portID)
+			if err != nil {
+				log.Errorf("Unable to get port number. Error %v ", err)
+			}
+
+			if err = addInAcceptRule(tenantName, networkName, "", policyName, "tcp", pNum, ruleID); err != nil {
+				log.Errorf("Unable to add accept rule. Error %v ", err)
+				return err
+			} else {
+				log.Debugf("Exposed %v : port %v", policyName, portID)
+			}
+			ruleID++
+		}
+		policyRec.nextRuleId = ruleID
+		polRecs[toSvcName] = policyRec
+        }
+
+	return nil
+}
+
+func applyInPolicy(p *project.Project, fromSvcName, toSvcName string, polRecs map[string]policyCreateRec) error {
 	svc := p.Configs[toSvcName]
 
+	policyRec := getPolicyRec(toSvcName, polRecs)
 	tenantName := getTenantName(svc.Labels.MapParts())
 	networkName := getNetworkName(svc.Labels.MapParts())
 	toEpgName := getSvcName(p, toSvcName)
@@ -330,7 +425,7 @@ func applyInPolicy(p *project.Project, fromSvcName, toSvcName string) error {
 	policyName := getInPolicyStr(p.Name, toSvcName)
 	fromEpgName := getFromEpgName(p, fromSvcName)
 
-	ruleID := 1
+	ruleID := policyRec.nextRuleId
 	policies := []string{}
 
 	imageInfoList, err := getImageInfo(toSvcName)
@@ -364,6 +459,9 @@ func applyInPolicy(p *project.Project, fromSvcName, toSvcName string) error {
 		return err
 	}
 
+	policyRec.nextRuleId = ruleID
+	policyRec.policyApplied = true
+	polRecs[toSvcName] = policyRec
 	return nil
 }
 
