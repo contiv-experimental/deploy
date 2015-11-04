@@ -3,7 +3,6 @@ package nethooks
 import (
 	"strconv"
 	s "strings"
-
 	log "github.com/Sirupsen/logrus"
 	"github.com/contiv/contivmodel"
 	"github.com/contiv/objdb/modeldb"
@@ -16,6 +15,7 @@ const (
 
 type policyCreateRec struct {
 	nextRuleId    int
+	nextRuleId int
 	policyApplied bool
 }
 
@@ -371,7 +371,11 @@ func getPolicyRec(name string, polRecs map[string]policyCreateRec) policyCreateR
 }
 
 func applyExposePolicy(p *project.Project, expMap map[string][]string, polRecs map[string]policyCreateRec) error {
+<<<<<<< HEAD
 
+=======
+	
+>>>>>>> aa41d92... Changes to propagate ports exposed from an app composition
 	tenantName := "default"
 	for toSvcName, spList := range expMap {
 		svc := p.Configs[toSvcName]
@@ -381,12 +385,20 @@ func applyExposePolicy(p *project.Project, expMap map[string][]string, polRecs m
 		policyName := getInPolicyStr(p.Name, toSvcName)
 		// create the policy, if necessary
 		if !policyRec.policyApplied && (len(spList) > 0) {
+<<<<<<< HEAD
 			policies := []string{}
+=======
+		    policies := []string{}
+>>>>>>> aa41d92... Changes to propagate ports exposed from an app composition
 			if err := addPolicy(tenantName, policyName); err != nil {
 				log.Errorf("Unable to add policy. Error %v ", err)
 				return err
 			}
+<<<<<<< HEAD
 			toEpgName := getSvcName(p, toSvcName)
+=======
+			toEpgName := getFullSvcName(p, toSvcName)
+>>>>>>> aa41d92... Changes to propagate ports exposed from an app composition
 			policies = append(policies, policyName)
 			if err := addEpg(tenantName, networkName, toEpgName, policies); err != nil {
 				log.Errorf("Unable to add epg. Error %v", err)
@@ -401,7 +413,11 @@ func applyExposePolicy(p *project.Project, expMap map[string][]string, polRecs m
 			}
 
 			if err = addInAcceptRule(tenantName, networkName, "", policyName, "tcp", pNum, ruleID); err != nil {
+<<<<<<< HEAD
 				log.Errorf("Unable to add allow rule. Error %v ", err)
+=======
+				log.Errorf("Unable to add accept rule. Error %v ", err)
+>>>>>>> aa41d92... Changes to propagate ports exposed from an app composition
 				return err
 			} else {
 				log.Debugf("Exposed %v : port %v", policyName, portID)
@@ -410,7 +426,11 @@ func applyExposePolicy(p *project.Project, expMap map[string][]string, polRecs m
 		}
 		policyRec.nextRuleId = ruleID
 		polRecs[toSvcName] = policyRec
+<<<<<<< HEAD
 	}
+=======
+        }
+>>>>>>> aa41d92... Changes to propagate ports exposed from an app composition
 
 	return nil
 }
@@ -424,7 +444,11 @@ func applyInPolicy(p *project.Project, fromSvcName, toSvcName string, polRecs ma
 	toEpgName := getSvcName(p, toSvcName)
 
 	policyName := getInPolicyStr(p.Name, toSvcName)
+<<<<<<< HEAD
 	fromEpgName := getFromEpgName(p, fromSvcName)
+=======
+  	fromEpgName := getFromEpgName(p, fromSvcName)
+>>>>>>> aa41d92... Changes to propagate ports exposed from an app composition
 
 	ruleID := policyRec.nextRuleId
 	policies := []string{}

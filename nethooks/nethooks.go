@@ -20,7 +20,7 @@ func applyLinksBasedPolicy(p *project.Project) error {
 		log.Debugf("Unable to find links from service chains. Error %v", err)
 		return err
 	}
-
+	
 	if err := addEpgs(p); err != nil {
 		log.Errorf("Unable to apply policies for unspecified tiers. Error %v", err)
 		return err
