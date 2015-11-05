@@ -33,25 +33,22 @@ func NetHooks(p *project.Project, e project.EventType) error {
 			return err
 		}
 	case project.EventProjectDownStart:
-		if err := nethooks.DeleteNetConfig(p); err != nil {
-			return err
-		}
 	}
 
 	return nil
 }
 
-func PopulateDNS(p *project.Project, e project.EventType) error {
+func PostHooks(p *project.Project, e project.EventType) error {
 	switch e {
 	case project.EventProjectUpStart:
 		if err := nethooks.PopulateEtcHosts(p); err != nil {
 			return err
 		}
 	case project.EventProjectDownStart:
+		if err := nethooks.DeleteNetConfig(p); err != nil {
+			return err
+		}
 	}
 
-	if err := nethooks.PopulateEtcHosts(p); err != nil {
-		return err
-	}
 	return nil
 }
