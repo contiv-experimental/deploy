@@ -1,18 +1,17 @@
-
 package nethooks
 
 import (
 	"os"
 	"os/exec"
-	"strings"
 	"strconv"
+	"strings"
 
 	log "github.com/Sirupsen/logrus"
 	"github.com/samalba/dockerclient"
 )
 
 type imageInfo struct {
-	portID int
+	portID    int
 	protoName string
 }
 
@@ -51,12 +50,12 @@ func getContainerIP(contName string) string {
 	ipAddress := ""
 	output, err := exec.Command("docker", "exec", contName, "/sbin/ip", "address", "show").CombinedOutput()
 	if err != nil {
-		log.Errorf("Unable to fetch container '%s' IP. Error %v", contName,err)
+		log.Errorf("Unable to fetch container '%s' IP. Error %v", contName, err)
 		return ipAddress
 	}
 
 	lines := strings.Split(string(output), "\n")
-	for _,line := range lines {
+	for _, line := range lines {
 		if strings.Contains(line, "eth0") && strings.Contains(line, "inet ") {
 			words := strings.Split(line, " ")
 			for idx, word := range words {
