@@ -208,16 +208,16 @@ func addApp(tenantName string, p *project.Project) error {
 
 	// Add services
 	for svcName := range p.Configs {
-		epgName := getFullSvcName(p, svcName)
+		epgKey := TENANT_DEFAULT + ":" + NETWORK_DEFAULT + ":" + getSvcName(p, svcName)
 		epg := &contivModel.EndpointGroup{
-			Key: epgName,
+			Key: epgKey,
 		}
 
 		if err := modeldb.AddLinkSet(&app.LinkSets.Services, epg); err != nil {
 			log.Errorf("addApp:Unable to add link for service '%s'. Error %v", svcName, err)
 			return err
 		}
-		log.Debugf("addApp add link for:'%s' ", epgName)
+		log.Debugf("addApp add link for:'%s' ", epgKey)
 	}
 
 	if err := httpPost(getAppPath(tenantName, p.Name), app); err != nil {
