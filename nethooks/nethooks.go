@@ -6,10 +6,10 @@ import (
 )
 
 const (
-	applyLinksBasedPolicyFlag = true
+	applyLinksBasedPolicyFlag  = true
 	applyLabelsBasedPolicyFlag = true
-	applyDefaultPolicyFlag = false
-	applyContractPolicyFlag = true
+	applyDefaultPolicyFlag     = false
+	applyContractPolicyFlag    = true
 )
 
 func applyLinksBasedPolicy(p *project.Project) error {
@@ -29,7 +29,7 @@ func applyLinksBasedPolicy(p *project.Project) error {
 	policyApplied := make(map[string]bool)
 	for fromSvcName, toSvcNames := range links {
 		for _, toSvcName := range toSvcNames {
-		  log.Infof("Creating policy contract from service '%s' to services '%s'", fromSvcName, toSvcName)
+			log.Infof("Creating policy contract from service '%s' to services '%s'", fromSvcName, toSvcName)
 			if err := applyInPolicy(p, fromSvcName, toSvcName); err != nil {
 				log.Errorf("Unable to apply in-policy for service '%s'. Error %v", toSvcName, err)
 				return err
@@ -49,7 +49,7 @@ func applyLinksBasedPolicy(p *project.Project) error {
 			log.Errorf("Unable to apply policies for unspecified tiers. Error %v", err)
 			return err
 		}
-	} 
+	}
 
 	return nil
 }
@@ -104,8 +104,8 @@ func DeleteNetConfig(p *project.Project) error {
 
 func AutoGenParams(p *project.Project) error {
 	for svcName, svc := range p.Configs {
-		if svc.PublishService == "" {
-			svc.PublishService = getFullSvcName(p, svcName)
+		if svc.Net == "" {
+			svc.Net = getFullSvcName(p, svcName) + "." + getTenantName(nil)
 		}
 		if svc.Hostname == "" {
 			svc.Hostname = p.Name + "_" + svcName + "_1"
@@ -147,7 +147,7 @@ func PopulateEtcHosts(p *project.Project) error {
 		// TODO: need to populate all instances not just first instance
 		for contSvcName, _ := range p.Configs {
 			if contSvcName == dnsSvcName {
-					continue
+				continue
 			}
 			contName := getContName(p, contSvcName)
 			if err := populateEtcHosts(contName, dnsSvcEntryName, dnsSvcIpAddress); err != nil {
