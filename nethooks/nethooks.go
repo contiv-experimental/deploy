@@ -20,7 +20,7 @@ func applyLinksBasedPolicy(p *project.Project) error {
 		log.Debugf("Unable to find links from service chains. Error %v", err)
 		return err
 	}
-	
+
 	if err := addEpgs(p); err != nil {
 		log.Errorf("Unable to apply policies for unspecified tiers. Error %v", err)
 		return err
@@ -30,7 +30,7 @@ func applyLinksBasedPolicy(p *project.Project) error {
 	for fromSvcName, toSvcNames := range links {
 		for _, toSvcName := range toSvcNames {
 			log.Infof("Creating policy contract from service '%s' to services '%s'", fromSvcName, toSvcName)
-			if err := applyInPolicy(p, fromSvcName, toSvcName); err != nil {
+			if err := applyInPolicy(p, fromSvcName, toSvcName, policyRecs); err != nil {
 				log.Errorf("Unable to apply in-policy for service '%s'. Error %v", toSvcName, err)
 				return err
 			}
@@ -124,6 +124,23 @@ func AutoGenParams(p *project.Project) error {
 		}
 		if svc.Hostname == "" {
 			svc.Hostname = p.Name + "_" + svcName + "_1"
+		}
+		// Get the DNS Parameters
+		dnsAddr, err := getDnsInfo(NETWORK_DEFAULT, TENANT_DEFAULT)
+		if err != nil {
+			log.Errorf("Error getting DNS params. Err: %v", err)
+			return err
+		}
+
+		if svc.DNS.Len() == 0 {
+			svc.DNS = project.NewStringorslice(dnsAddr)
+		}
+		if svc.DNSSearch.Len() == 0 {
+			netDomain := NETWORK_DEFAULT + "." + TENANT_DEFAULT
+			tenantDomain := TENANT_DEFAULT
+
+			// DNS search option is [<network>.<tenant>, <tenant>]
+			svc.DNSSearch = project.NewStringorslice(netDomain, tenantDomain)
 		}
 	}
 

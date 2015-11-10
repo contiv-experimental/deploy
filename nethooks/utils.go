@@ -1,10 +1,12 @@
 package nethooks
 
 import (
+	"fmt"
 	"os"
 	"os/exec"
 	"strconv"
 	"strings"
+	"encoding/json"
 
 	log "github.com/Sirupsen/logrus"
 	"github.com/samalba/dockerclient"
@@ -80,4 +82,29 @@ func populateEtcHosts(contName, dnsSvcName, ipAddress string) error {
 		log.Infof("VJ ===> output = %s ", output)
 	}
 	return nil
+}
+
+// getDnsInfo returns DNS information for a network
+// - Query netmaster to get the DNS server address
+func getDnsInfo(networkName, tenantName string) (string, error) {
+	var cfgList []map[string]*json.RawMessage
+	var dnsAddr string
+
+	networkID := fmt.Sprintf("%s.%s", networkName, tenantName)
+
+	netInfoUrl := "http://netmaster:9999/network/" + networkID
+	err := httpGet(netInfoUrl, &cfgList)
+	if err != nil {
+		log.Errorf("Error getting network info for %s. Err: %v", networkID, err)
+		return "", err
+	}
+
+	nwCfg := cfgList[0]
+	err = json.Unmarshal(*nwCfg["dnsServer"], &dnsAddr)
+	if err != nil {
+		log.Errorf("Error decoding json: %+v, Err: %v", nwCfg, err)
+		return "", err
+	}
+
+	return dnsAddr, nil
 }
