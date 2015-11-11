@@ -117,6 +117,24 @@ func DeleteNetConfig(p *project.Project) error {
 	return nil
 }
 
+func ScaleNetConfig(p *project.Project) error {
+	log.Debugf("Scale network for the project '%s' ", p.Name)
+
+	if applyLinksBasedPolicyFlag {
+		if err := clearSvcLinks(p); err != nil {
+			log.Errorf("Unable to clear service links. Error: %s", err)
+		}
+		if err := clearExposedPorts(p); err != nil {
+			log.Errorf("Unable to clear exposed ports. Error: %s", err)
+		}
+	}
+	if applyLabelsBasedPolicyFlag {
+		log.Infof("Applying labels based policies")
+	}
+
+	return nil
+}
+
 func AutoGenParams(p *project.Project) error {
 	for svcName, svc := range p.Configs {
 		if svc.Net == "" {

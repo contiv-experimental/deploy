@@ -88,7 +88,6 @@ func populateEtcHosts(contName, dnsSvcName, ipAddress string) error {
 // - Query netmaster to get the DNS server address
 func getDnsInfo(networkName, tenantName string) (string, error) {
 	var cfgList []map[string]*json.RawMessage
-	var dnsAddr string
 
 	networkID := fmt.Sprintf("%s.%s", networkName, tenantName)
 
@@ -100,6 +99,7 @@ func getDnsInfo(networkName, tenantName string) (string, error) {
 	}
 
 	nwCfg := cfgList[0]
+	dnsAddr := ""
 	err = json.Unmarshal(*nwCfg["dnsServer"], &dnsAddr)
 	if err != nil {
 		log.Errorf("Error decoding json: %+v, Err: %v", nwCfg, err)
@@ -107,4 +107,9 @@ func getDnsInfo(networkName, tenantName string) (string, error) {
 	}
 
 	return dnsAddr, nil
+}
+
+func containerExists(contName string) bool {
+  _, err := exec.Command("docker", "inspect", contName).CombinedOutput()
+  return err == nil
 }
