@@ -3,6 +3,7 @@ package nethooks
 import (
 	"strconv"
 	s "strings"
+
 	log "github.com/Sirupsen/logrus"
 	"github.com/contiv/objmodel/contivModel"
 	"github.com/contiv/objmodel/objdb/modeldb"
@@ -14,7 +15,7 @@ const (
 )
 
 type policyCreateRec struct {
-	nextRuleId int
+	nextRuleId    int
 	policyApplied bool
 }
 
@@ -263,7 +264,7 @@ func addApp(tenantName string, p *project.Project) error {
 	return nil
 }
 
-func deleteApp (tenantName string, p *project.Project) error {
+func deleteApp(tenantName string, p *project.Project) error {
 
 	log.Debugf("Entered deleteApp '%s':'%s' ", tenantName, p.Name)
 
@@ -370,7 +371,7 @@ func getPolicyRec(name string, polRecs map[string]policyCreateRec) policyCreateR
 }
 
 func applyExposePolicy(p *project.Project, expMap map[string][]string, polRecs map[string]policyCreateRec) error {
-	
+
 	tenantName := "default"
 	for toSvcName, spList := range expMap {
 		svc := p.Configs[toSvcName]
@@ -380,12 +381,12 @@ func applyExposePolicy(p *project.Project, expMap map[string][]string, polRecs m
 		policyName := getInPolicyStr(p.Name, toSvcName)
 		// create the policy, if necessary
 		if !policyRec.policyApplied && (len(spList) > 0) {
-		    policies := []string{}
+			policies := []string{}
 			if err := addPolicy(tenantName, policyName); err != nil {
 				log.Errorf("Unable to add policy. Error %v ", err)
 				return err
 			}
-			toEpgName := getFullSvcName(p, toSvcName)
+			toEpgName := getSvcName(p, toSvcName)
 			policies = append(policies, policyName)
 			if err := addEpg(tenantName, networkName, toEpgName, policies); err != nil {
 				log.Errorf("Unable to add epg. Error %v", err)
@@ -409,7 +410,7 @@ func applyExposePolicy(p *project.Project, expMap map[string][]string, polRecs m
 		}
 		policyRec.nextRuleId = ruleID
 		polRecs[toSvcName] = policyRec
-        }
+	}
 
 	return nil
 }
