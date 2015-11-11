@@ -1,12 +1,13 @@
 package nethooks
 
 import (
+	"encoding/json"
+	"errors"
 	"fmt"
 	"os"
 	"os/exec"
 	"strconv"
 	"strings"
-	"encoding/json"
 
 	log "github.com/Sirupsen/logrus"
 	"github.com/samalba/dockerclient"
@@ -91,6 +92,7 @@ func getDnsInfo(networkName, tenantName string) (string, error) {
 
 	networkID := fmt.Sprintf("%s.%s", networkName, tenantName)
 
+	// Get network params from netmaster
 	netInfoUrl := "http://netmaster:9999/network/" + networkID
 	err := httpGet(netInfoUrl, &cfgList)
 	if err != nil {
@@ -98,8 +100,16 @@ func getDnsInfo(networkName, tenantName string) (string, error) {
 		return "", err
 	}
 
+	// Check if we havd DNS attribute
 	nwCfg := cfgList[0]
 	dnsAddr := ""
+	_, ok := nwCfg["dnsServer"]
+	if !ok {
+		log.Errorf("dns server not found for the network %s", networkID)
+		return "", errors.New("DNS Server not found")
+	}
+
+	// Get the DNS address
 	err = json.Unmarshal(*nwCfg["dnsServer"], &dnsAddr)
 	if err != nil {
 		log.Errorf("Error decoding json: %+v, Err: %v", nwCfg, err)

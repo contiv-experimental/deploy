@@ -138,7 +138,7 @@ func ScaleNetConfig(p *project.Project) error {
 func AutoGenParams(p *project.Project) error {
 	for svcName, svc := range p.Configs {
 		if svc.Net == "" {
-			svc.Net = getFullSvcName(p, svcName) + "." + getTenantName(nil)
+			svc.Net = getFullSvcName(p, svcName) 
 		}
 		if svc.Hostname == "" {
 			svc.Hostname = p.Name + "_" + svcName + "_1"
