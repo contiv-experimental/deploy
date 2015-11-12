@@ -140,9 +140,6 @@ func AutoGenParams(p *project.Project) error {
 		if svc.Net == "" {
 			svc.Net = getFullSvcName(p, svcName) 
 		}
-		if svc.Hostname == "" {
-			svc.Hostname = p.Name + "_" + svcName + "_1"
-		}
 		// Get the DNS Parameters
 		dnsAddr, err := getDnsInfo(NETWORK_DEFAULT, TENANT_DEFAULT)
 		if err != nil {
