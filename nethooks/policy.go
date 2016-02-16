@@ -5,8 +5,8 @@ import (
 	s "strings"
 
 	log "github.com/Sirupsen/logrus"
-	"github.com/contiv/objmodel/contivModel"
-	"github.com/contiv/objmodel/objdb/modeldb"
+	"github.com/contiv/contivmodel"
+	"github.com/contiv/objdb/modeldb"
 	"github.com/docker/libcompose/project"
 )
 
@@ -161,11 +161,11 @@ func clearExposedPorts(p *project.Project) error {
 }
 
 func addDenyAllRule(tenantName, networkName, fromEpgName, policyName string, ruleID int) error {
-	rule := &contivModel.Rule{
+	rule := &contivmodel.Rule{
 		Action:        "deny",
 		Direction:     "in",
-		EndpointGroup: fromEpgName,
-		Network:       networkName,
+		FromEndpointGroup: fromEpgName,
+		FromNetwork:       networkName,
 		PolicyName:    policyName,
 		Priority:      ruleID,
 		Protocol:      "tcp",
@@ -181,11 +181,11 @@ func addDenyAllRule(tenantName, networkName, fromEpgName, policyName string, rul
 }
 
 func addInAcceptRule(tenantName, networkName, fromEpgName, policyName, protoName string, portID, ruleID int) error {
-	rule := &contivModel.Rule{
-		Action:        "accept",
+	rule := &contivmodel.Rule{
+		Action:        "allow",
 		Direction:     "in",
-		EndpointGroup: fromEpgName,
-		Network:       networkName,
+		FromEndpointGroup: fromEpgName,
+		FromNetwork:       networkName,
 		PolicyName:    policyName,
 		Port:          portID,
 		Priority:      ruleID,
@@ -194,7 +194,7 @@ func addInAcceptRule(tenantName, networkName, fromEpgName, policyName, protoName
 		TenantName:    tenantName,
 	}
 	if err := httpPost(getRulePath(rule.TenantName, rule.PolicyName, rule.RuleID), rule); err != nil {
-		log.Errorf("Unable to create accept rule %#v. Error: %v", rule, err)
+		log.Errorf("Unable to create allow rule %#v. Error: %v", rule, err)
 		return err
 	}
 
@@ -202,11 +202,11 @@ func addInAcceptRule(tenantName, networkName, fromEpgName, policyName, protoName
 }
 
 func addOutAcceptAllRule(tenantName, networkName, fromEpgName, policyName string, ruleID int) error {
-	rule := &contivModel.Rule{
-		Action:        "accept",
+	rule := &contivmodel.Rule{
+		Action:        "allow",
 		Direction:     "out",
-		EndpointGroup: fromEpgName,
-		Network:       networkName,
+		FromEndpointGroup: fromEpgName,
+		FromNetwork:       networkName,
 		PolicyName:    policyName,
 		Priority:      ruleID,
 		Protocol:      "tcp",
@@ -214,7 +214,7 @@ func addOutAcceptAllRule(tenantName, networkName, fromEpgName, policyName string
 		TenantName:    tenantName,
 	}
 	if err := httpPost(getRulePath(rule.TenantName, rule.PolicyName, rule.RuleID), rule); err != nil {
-		log.Errorf("Unable to create accept rule %#v. Error: %v", rule, err)
+		log.Errorf("Unable to create allow rule %#v. Error: %v", rule, err)
 		return err
 	}
 
@@ -222,7 +222,7 @@ func addOutAcceptAllRule(tenantName, networkName, fromEpgName, policyName string
 }
 
 func addPolicy(tenantName, policyName string) error {
-	policy := &contivModel.Policy{
+	policy := &contivmodel.Policy{
 		PolicyName: policyName,
 		TenantName: tenantName,
 	}
@@ -237,7 +237,7 @@ func addPolicy(tenantName, policyName string) error {
 func addApp(tenantName string, p *project.Project) error {
 
 	log.Debugf("Entered addApp '%s':'%s' ", tenantName, p.Name)
-	app := &contivModel.App{
+	app := &contivmodel.App{
 		AppName:    p.Name,
 		TenantName: tenantName,
 	}
@@ -245,7 +245,7 @@ func addApp(tenantName string, p *project.Project) error {
 	// Add services
 	for svcName := range p.Configs {
 		epgKey := TENANT_DEFAULT + ":" + NETWORK_DEFAULT + ":" + getSvcName(p, svcName)
-		epg := &contivModel.EndpointGroup{
+		epg := &contivmodel.EndpointGroup{
 			Key: epgKey,
 		}
 
@@ -277,7 +277,7 @@ func deleteApp(tenantName string, p *project.Project) error {
 }
 
 func addEpg(tenantName, networkName, epgName string, policies []string) error {
-	epg := &contivModel.EndpointGroup{
+	epg := &contivmodel.EndpointGroup{
 		EndpointGroupID: 1,
 		GroupName:       epgName,
 		NetworkName:     networkName,
@@ -401,7 +401,7 @@ func applyExposePolicy(p *project.Project, expMap map[string][]string, polRecs m
 			}
 
 			if err = addInAcceptRule(tenantName, networkName, "", policyName, "tcp", pNum, ruleID); err != nil {
-				log.Errorf("Unable to add accept rule. Error %v ", err)
+				log.Errorf("Unable to add allow rule. Error %v ", err)
 				return err
 			} else {
 				log.Debugf("Exposed %v : port %v", policyName, portID)
@@ -449,7 +449,7 @@ func applyInPolicy(p *project.Project, fromSvcName, toSvcName string, polRecs ma
 
 	for _, imageInfo := range imageInfoList {
 		if err := addInAcceptRule(tenantName, networkName, fromEpgName, policyName, imageInfo.protoName, imageInfo.portID, ruleID); err != nil {
-			log.Errorf("Unable to add accept rule. Error %v ", err)
+			log.Errorf("Unable to add allow rule. Error %v ", err)
 			return err
 		}
 		ruleID++
@@ -481,7 +481,7 @@ func removePolicy(p *project.Project, svcName, dir string) error {
 
 	policyPath := getPolicyPath(tenantName, policyName)
 
-	policy := contivModel.Policy{}
+	policy := contivmodel.Policy{}
 	if err := httpGet(policyPath, &policy); err != nil {
 		log.Debugf("Unable to delete policy for service '%s' policy %s", svcName, policyName)
 		return nil
