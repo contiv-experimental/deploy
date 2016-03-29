@@ -4,8 +4,7 @@ import (
 	"strconv"
 	s "strings"
 	log "github.com/Sirupsen/logrus"
-	"github.com/contiv/contivmodel"
-	"github.com/contiv/objdb/modeldb"
+	contivmodel "github.com/contiv/contivmodel"
 	"github.com/docker/libcompose/project"
 )
 
@@ -15,7 +14,6 @@ const (
 
 type policyCreateRec struct {
 	nextRuleId    int
-	nextRuleId int
 	policyApplied bool
 }
 
@@ -35,8 +33,10 @@ func getPolicyPath(tenantName, policyName string) string {
 	return baseURL + "policys/" + tenantName + ":" + policyName + "/"
 }
 
-func getAppPath(tenantName, appName string) string {
-	return baseURL + "apps/" + tenantName + ":" + appName + "/"
+func getAppProfilePath(tenantName, networkName, appProfileName string) string {
+	keyStr := tenantName + ":" + networkName + ":" + appProfileName
+        url := baseURL + "/api/appProfiles/" + keyStr + "/"
+	return url
 }
 
 func getEpgPath(tenantName, networkName, groupName string) string {
@@ -237,26 +237,23 @@ func addPolicy(tenantName, policyName string) error {
 func addApp(tenantName string, p *project.Project) error {
 
 	log.Debugf("Entered addApp '%s':'%s' ", tenantName, p.Name)
-	app := &contivmodel.App{
-		AppName:    p.Name,
+	epgList := make([]string, 0, 3)
+	app := &contivmodel.AppProfile{
+		AppProfileName: p.Name,
 		TenantName: tenantName,
+		NetworkName: NETWORK_DEFAULT,
 	}
 
 	// Add services
 	for svcName := range p.Configs {
-		epgKey := TENANT_DEFAULT + ":" + NETWORK_DEFAULT + ":" + getSvcName(p, svcName)
-		epg := &contivmodel.EndpointGroup{
-			Key: epgKey,
-		}
-
-		if err := modeldb.AddLinkSet(&app.LinkSets.Services, epg); err != nil {
-			log.Errorf("addApp:Unable to add link for service '%s'. Error %v", svcName, err)
-			return err
-		}
-		log.Debugf("addApp add link for:'%s' ", epgKey)
+		epgName := getSvcName(p, svcName)
+		epgList = append(epgList, epgName)
+		log.Debugf("addApp add epg :'%s' ", epgName)
 	}
 
-	if err := httpPost(getAppPath(tenantName, p.Name), app); err != nil {
+	app.EndpointGroups = epgList
+
+	if err := httpPost(getAppProfilePath(tenantName, NETWORK_DEFAULT, p.Name), app); err != nil {
 		log.Errorf("Unable to post app to netmaster. Error: %v", err)
 		return err
 	}
@@ -268,7 +265,7 @@ func deleteApp(tenantName string, p *project.Project) error {
 
 	log.Debugf("Entered deleteApp '%s':'%s' ", tenantName, p.Name)
 
-	if err := httpDelete(getAppPath(tenantName, p.Name)); err != nil {
+	if err := httpDelete(getAppProfilePath(tenantName, NETWORK_DEFAULT, p.Name)); err != nil {
 		log.Errorf("Unable to post app delete to netmaster. Error: %v", err)
 		return err
 	}
@@ -371,11 +368,6 @@ func getPolicyRec(name string, polRecs map[string]policyCreateRec) policyCreateR
 }
 
 func applyExposePolicy(p *project.Project, expMap map[string][]string, polRecs map[string]policyCreateRec) error {
-<<<<<<< HEAD
-
-=======
-	
->>>>>>> aa41d92... Changes to propagate ports exposed from an app composition
 	tenantName := "default"
 	for toSvcName, spList := range expMap {
 		svc := p.Configs[toSvcName]
@@ -385,20 +377,12 @@ func applyExposePolicy(p *project.Project, expMap map[string][]string, polRecs m
 		policyName := getInPolicyStr(p.Name, toSvcName)
 		// create the policy, if necessary
 		if !policyRec.policyApplied && (len(spList) > 0) {
-<<<<<<< HEAD
 			policies := []string{}
-=======
-		    policies := []string{}
->>>>>>> aa41d92... Changes to propagate ports exposed from an app composition
 			if err := addPolicy(tenantName, policyName); err != nil {
 				log.Errorf("Unable to add policy. Error %v ", err)
 				return err
 			}
-<<<<<<< HEAD
-			toEpgName := getSvcName(p, toSvcName)
-=======
 			toEpgName := getFullSvcName(p, toSvcName)
->>>>>>> aa41d92... Changes to propagate ports exposed from an app composition
 			policies = append(policies, policyName)
 			if err := addEpg(tenantName, networkName, toEpgName, policies); err != nil {
 				log.Errorf("Unable to add epg. Error %v", err)
@@ -413,11 +397,7 @@ func applyExposePolicy(p *project.Project, expMap map[string][]string, polRecs m
 			}
 
 			if err = addInAcceptRule(tenantName, networkName, "", policyName, "tcp", pNum, ruleID); err != nil {
-<<<<<<< HEAD
 				log.Errorf("Unable to add allow rule. Error %v ", err)
-=======
-				log.Errorf("Unable to add accept rule. Error %v ", err)
->>>>>>> aa41d92... Changes to propagate ports exposed from an app composition
 				return err
 			} else {
 				log.Debugf("Exposed %v : port %v", policyName, portID)
@@ -426,11 +406,7 @@ func applyExposePolicy(p *project.Project, expMap map[string][]string, polRecs m
 		}
 		policyRec.nextRuleId = ruleID
 		polRecs[toSvcName] = policyRec
-<<<<<<< HEAD
 	}
-=======
-        }
->>>>>>> aa41d92... Changes to propagate ports exposed from an app composition
 
 	return nil
 }
@@ -444,11 +420,7 @@ func applyInPolicy(p *project.Project, fromSvcName, toSvcName string, polRecs ma
 	toEpgName := getSvcName(p, toSvcName)
 
 	policyName := getInPolicyStr(p.Name, toSvcName)
-<<<<<<< HEAD
 	fromEpgName := getFromEpgName(p, fromSvcName)
-=======
-  	fromEpgName := getFromEpgName(p, fromSvcName)
->>>>>>> aa41d92... Changes to propagate ports exposed from an app composition
 
 	ruleID := policyRec.nextRuleId
 	policies := []string{}
