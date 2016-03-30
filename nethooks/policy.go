@@ -35,7 +35,7 @@ func getPolicyPath(tenantName, policyName string) string {
 
 func getAppProfilePath(tenantName, networkName, appProfileName string) string {
 	keyStr := tenantName + ":" + networkName + ":" + appProfileName
-        url := baseURL + "/api/appProfiles/" + keyStr + "/"
+        url := baseURL + "appProfiles/" + keyStr + "/"
 	return url
 }
 
@@ -382,7 +382,7 @@ func applyExposePolicy(p *project.Project, expMap map[string][]string, polRecs m
 				log.Errorf("Unable to add policy. Error %v ", err)
 				return err
 			}
-			toEpgName := getFullSvcName(p, toSvcName)
+			toEpgName := getSvcName(p, toSvcName)
 			policies = append(policies, policyName)
 			if err := addEpg(tenantName, networkName, toEpgName, policies); err != nil {
 				log.Errorf("Unable to add epg. Error %v", err)
