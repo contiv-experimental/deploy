@@ -20,7 +20,7 @@ func applyLinksBasedPolicy(p *project.Project) error {
 		log.Debugf("Unable to find links from service chains. Error %v", err)
 		return err
 	}
-
+	
 	if err := addEpgs(p); err != nil {
 		log.Errorf("Unable to apply policies for unspecified tiers. Error %v", err)
 		return err
@@ -92,6 +92,10 @@ func DeleteNetConfig(p *project.Project) error {
 	//TODO allow tenant name to be specified
 	name := "default"
 
+	if err := deleteApp(name, p); err != nil {
+		log.Errorf("Unable to delete app. Error %v", err)
+	}
+
 	for svcName, _ := range p.Configs {
 		if err := removeEpg(p, svcName); err != nil {
 			log.Errorf("Unable to remove out-policy for service '%s'. Error %v", svcName, err)
@@ -108,10 +112,6 @@ func DeleteNetConfig(p *project.Project) error {
 		if err := clearSvcLinks(p); err != nil {
 			log.Errorf("Unable to clear service links. Error: %s", err)
 		}
-	}
-
-	if err := deleteApp(name, p); err != nil {
-		log.Errorf("Unable to delete app. Error %v", err)
 	}
 
 	return nil
